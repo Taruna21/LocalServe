@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>KaamMilao — Find Jobs</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #FDF6EC; }
+        nav {
+            background: #1A1208; padding: 1rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .logo { color: white; font-size: 1.4rem; font-weight: 700; }
+        .logo span { color: #F4511E; }
+        .nav-user { color: rgba(255,255,255,0.7); font-size: 0.9rem; }
+        .logout { background: transparent; border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer; margin-left: 1rem; }
+        .container { padding: 2rem 5%; }
+        .search-bar { background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; border: 1px solid #EDD9B8; display: flex; gap: 1rem; flex-wrap: wrap; }
+        input, select { padding: 0.7rem 1rem; border: 1.5px solid #EDD9B8; border-radius: 8px; font-size: 0.9rem; outline: none; }
+        input:focus, select:focus { border-color: #F4511E; }
+        .search-btn { background: #F4511E; color: white; border: none; padding: 0.7rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .tabs { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+        .tab { padding: 0.5rem 1.2rem; border-radius: 8px; border: 1.5px solid #EDD9B8; background: white; cursor: pointer; font-weight: 600; color: #9E8060; }
+        .tab.active { background: #F4511E; color: white; border-color: #F4511E; }
+        .jobs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+        .job-card { background: white; border-radius: 12px; padding: 1.5rem; border: 1px solid #EDD9B8; transition: transform 0.2s; }
+        .job-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+        .job-title { font-size: 1.1rem; font-weight: 700; color: #1A1208; margin-bottom: 0.3rem; }
+        .job-cat { display: inline-block; background: #FBE9E7; color: #F4511E; border-radius: 20px; padding: 0.2rem 0.8rem; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.8rem; }
+        .job-info { font-size: 0.85rem; color: #9E8060; margin-bottom: 0.3rem; }
+        .job-pay { font-size: 1rem; font-weight: 700; color: #2E7D32; margin: 0.8rem 0; }
+        .apply-btn { width: 100%; padding: 0.65rem; background: #F4511E; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .apply-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .empty { text-align: center; padding: 3rem; color: #9E8060; }
+        .status-badge { display: inline-block; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .status-pending     { background: #FFF3E0; color: #E65100; }
+        .status-shortlisted { background: #E8F5E9; color: #2E7D32; }
+        .status-rejected    { background: #FFEBEE; color: #c0392b; }
+        .status-hired       { background: #E3F2FD; color: #1565C0; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="logo">Kaam<span>Milao</span></div>
+    <div>
+        <span class="nav-user" id="navUser"></span>
+        <button class="logout" onclick="logout()">Logout</button>
+    </div>
+</nav>
+
+<div class="container">
+    <!-- Search Bar -->
+    <div class="search-bar">
+        <input type="text" id="searchCity" placeholder="📍 City">
+        <select id="searchCategory">
+            <option value="">All Categories</option>
+            <option value="plumber">Plumber</option>
+            <option value="cook">Cook</option>
+            <option value="maid">Maid</option>
+            <option value="painter">Painter</option>
+            <option value="sweeper">Sweeper</option>
+            <option value="electrician">Electrician</option>
+            <option value="mechanic">Mechanic</option>
+            <option value="driver">Driver</option>
+            <option value="gardener">Gardener</option>
+        </select>
+        <button class="search-btn" onclick="loadJobs()">Search</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('jobs', this)">Browse Jobs</button>
+        <button class="tab" onclick="switchTab('applications', this)">My Applications</button>
+    </div>
+
+    <!-- Jobs Tab -->
+    <div id="jobsTab">
+        <div class="jobs-grid" id="jobsGrid">
+            <div class="empty">Loading jobs...</div>
+        </div>
+    </div>
+
+    <!-- Applications Tab -->
+    <div id="applicationsTab" style="display:none">
+        <div class="jobs-grid" id="applicationsGrid">
+            <div class="empty">Loading applications...</div>
+        </div>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+    // Load user info
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    document.getElementById('navUser').textContent = user.full_name || user.phone
+
+    // Redirect if not logged in
+    if (!getToken()) window.location.href = 'login.html'
+
+    function logout() {
+        localStorage.clear()
+        window.location.href = 'login.html'
+    }
+
+    function switchTab(tab, btn) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+        btn.classList.add('active')
+        document.getElementById('jobsTab').style.display        = tab === 'jobs'         ? 'block' : 'none'
+        document.getElementById('applicationsTab').style.display = tab === 'applications' ? 'block' : 'none'
+        if (tab === 'applications') loadApplications()
+    }
+
+    async function loadJobs() {
+        const city     = document.getElementById('searchCity').value.trim()
+        const category = document.getElementById('searchCategory').value
+
+        let url = `${API_BASE}/jobs/?`
+        if (city)     url += `city=${city}&`
+        if (category) url += `category=${category}&`
+
+        const res  = await fetch(url)
+        const jobs = await res.json()
+        renderJobs(jobs)
+    }
+
+    function renderJobs(jobs) {
+        const grid = document.getElementById('jobsGrid')
+        if (!jobs.length) {
+            grid.innerHTML = '<div class="empty">No jobs found. Try a different city or category.</div>'
+            return
+        }
+        grid.innerHTML = jobs.map(job => `
+            <div class="job-card">
+                <div class="job-title">${job.title}</div>
+                <span class="job-cat">${job.category}</span>
+                <div class="job-info">📍 ${job.area ? job.area + ', ' : ''}${job.city}</div>
+                <div class="job-info">👤 ${job.posted_by.full_name || job.posted_by.phone}</div>
+                <div class="job-pay">${job.pay_display}</div>
+                <button class="apply-btn" onclick="applyToJob(${job.id}, ${job.posted_by.id}, this)">
+                    Apply Now
+                </button>
+            </div>
+        `).join('')
+    }
+
+    async function applyToJob(jobId, recruiterId, btn) {
+        btn.disabled     = true
+        btn.textContent  = 'Applying...'
+
+        try {
+            const res = await fetch(`${API_BASE}/applications/apply/`, {
+                method:  'POST',
+                headers: authHeaders(),
+                body:    JSON.stringify({ job: jobId })
+            })
+            const data = await res.json()
+
+            if (res.ok) {
+                btn.textContent = '✅ Applied!'
+                btn.style.background = '#2E7D32'
+            } else {
+                btn.textContent = data.detail || 'Already applied'
+                btn.style.background = '#9E8060'
+            }
+        } catch (e) {
+            btn.textContent = 'Error. Try again'
+            btn.disabled    = false
+        }
+    }
+
+    async function loadApplications() {
+        const res  = await fetch(`${API_BASE}/applications/mine/`, { headers: authHeaders() })
+        const apps = await res.json()
+        const grid = document.getElementById('applicationsGrid')
+
+        if (!apps.length) {
+            grid.innerHTML = '<div class="empty">You have not applied to any jobs yet.</div>'
+            return
+        }
+
+        grid.innerHTML = apps.map(app => `
+            <div class="job-card">
+                <div class="job-title">${app.job_detail.title}</div>
+                <span class="job-cat">${app.job_detail.category}</span>
+                <div class="job-info">📍 ${app.job_detail.city}</div>
+                <div class="job-pay">${app.job_detail.pay_display}</div>
+                <div style="margin-top:0.5rem">
+                    Status: <span class="status-badge status-${app.status}">${app.status}</span>
+                </div>
+            </div>
+        `).join('')
+    }
+
+    // Load jobs on page load
+    loadJobs()
+</script>
+</body>
+</html>

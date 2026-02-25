@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KaamMilao — Login</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #FDF6EC;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 100vh;
+        }
+        .card {
+            background: white; border-radius: 16px; padding: 2.5rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            width: 100%; max-width: 400px;
+        }
+        h1 { font-size: 1.8rem; color: #1A1208; margin-bottom: 0.3rem; }
+        h1 span { color: #F4511E; }
+        p  { color: #9E8060; margin-bottom: 2rem; font-size: 0.9rem; }
+        .step { display: none; }
+        .step.active { display: block; }
+        label { font-size: 0.85rem; font-weight: 600; color: #3D2B0E; display: block; margin-bottom: 0.4rem; }
+        input {
+            width: 100%; padding: 0.8rem 1rem;
+            border: 1.5px solid #EDD9B8; border-radius: 8px;
+            font-size: 1rem; outline: none; margin-bottom: 1rem;
+        }
+        input:focus { border-color: #F4511E; }
+        button {
+            width: 100%; padding: 0.9rem;
+            background: #F4511E; color: white; border: none;
+            border-radius: 8px; font-size: 1rem; font-weight: 600;
+            cursor: pointer;
+        }
+        button:hover { background: #FF7043; }
+        .error { color: #c0392b; font-size: 0.85rem; margin-bottom: 1rem; display: none; }
+        .success { color: #27ae60; font-size: 0.85rem; margin-bottom: 1rem; display: none; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>Kaam<span>Milao</span></h1>
+    <p>Login with your mobile number</p>
+
+    <div class="error" id="errorMsg"></div>
+    <div class="success" id="successMsg"></div>
+
+    <!-- Step 1: Enter phone -->
+    <div class="step active" id="step1">
+        <label>Mobile Number</label>
+        <input type="tel" id="phoneInput" placeholder="Enter 10-digit number" maxlength="10">
+        <button onclick="sendOTP()">Send OTP</button>
+    </div>
+
+    <!-- Step 2: Enter OTP -->
+    <div class="step" id="step2">
+        <label>Enter OTP</label>
+        <input type="text" id="otpInput" placeholder="6-digit OTP" maxlength="6">
+        <button onclick="verifyOTP()">Verify & Login</button>
+    </div>
+
+    <!-- Step 3: Complete profile (new users only) -->
+    <div class="step" id="step3">
+        <label>Full Name</label>
+        <input type="text" id="nameInput" placeholder="Your full name">
+        <label>I am a</label>
+        <select id="roleInput" style="width:100%;padding:0.8rem;border:1.5px solid #EDD9B8;border-radius:8px;margin-bottom:1rem;font-size:1rem">
+            <option value="seeker">Job Seeker</option>
+            <option value="recruiter">Recruiter / Employer</option>
+        </select>
+        <label>City</label>
+        <input type="text" id="cityInput" placeholder="Your city">
+        <button onclick="completeProfile()">Get Started</button>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+    let userPhone = ''
+    let isNewUser = false
+
+    function showError(msg) {
+        const el = document.getElementById('errorMsg')
+        el.textContent = msg
+        el.style.display = 'block'
+        setTimeout(() => el.style.display = 'none', 4000)
+    }
+
+    function showSuccess(msg) {
+        const el = document.getElementById('successMsg')
+        el.textContent = msg
+        el.style.display = 'block'
+    }
+
+    async function sendOTP() {
+        const phone = document.getElementById('phoneInput').value.trim()
+
+        if (phone.length !== 10) {
+            showError('Enter a valid 10-digit number')
+            return
+        }
+
+        userPhone = phone
+
+        try {
+            const res = await fetch(`${API_BASE}/auth/send-otp/`, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ phone })
+            })
+            const data = await res.json()
+
+            if (res.ok) {
+                isNewUser = data.new_user
+                showSuccess('OTP sent! Check terminal (dev mode)')
+                // Switch to step 2
+                document.getElementById('step1').classList.remove('active')
+                document.getElementById('step2').classList.add('active')
+            } else {
+                showError(data.error || 'Something went wrong')
+            }
+        } catch (e) {
+            showError('Cannot connect to server. Is it running?')
+        }
+    }
+
+    async function verifyOTP() {
+        const otp = document.getElementById('otpInput').value.trim()
+
+        try {
+            const res = await fetch(`${API_BASE}/auth/verify-otp/`, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ phone: userPhone, otp })
+            })
+            const data = await res.json()
+
+            if (res.ok) {
+                // Save tokens to localStorage
+                localStorage.setItem('access_token',  data.tokens.access)
+                localStorage.setItem('refresh_token', data.tokens.refresh)
+                localStorage.setItem('user',          JSON.stringify(data.user))
+
+                if (isNewUser || !data.user.full_name) {
+                    // New user — show profile setup
+                    document.getElementById('step2').classList.remove('active')
+                    document.getElementById('step3').classList.add('active')
+                } else {
+                    // Existing user — redirect to dashboard
+                    redirectToDashboard(data.user.role)
+                }
+            } else {
+                showError(data.error || 'Invalid OTP')
+            }
+        } catch (e) {
+            showError('Cannot connect to server')
+        }
+    }
+
+    async function completeProfile() {
+        const full_name = document.getElementById('nameInput').value.trim()
+        const role      = document.getElementById('roleInput').value
+        const city      = document.getElementById('cityInput').value.trim()
+
+        try {
+            const res = await fetch(`${API_BASE}/auth/complete-profile/`, {
+                method:  'POST',
+                headers: authHeaders(),
+                body:    JSON.stringify({ full_name, role, city })
+            })
+            const data = await res.json()
+
+            if (res.ok) {
+                // Update stored user
+                localStorage.setItem('user', JSON.stringify(data.user))
+                redirectToDashboard(role)
+            } else {
+                showError('Could not save profile')
+            }
+        } catch (e) {
+            showError('Cannot connect to server')
+        }
+    }
+
+    function redirectToDashboard(role) {
+        if (role === 'recruiter') {
+            window.location.href = 'recruiter_dashboard.html'
+        } else {
+            window.location.href = 'seeker_dashboard.html'
+        }
+    }
+</script>
+</body>
+</html>
