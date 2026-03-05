@@ -1,136 +1,107 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status, permissions
-from rest_framework_simplejwt.tokens import RefreshToken
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth import login, logout
 from django.utils import timezone
-
+from django.contrib.auth.decorators import login_required
 from .models import User
 from .otp_utils import generate_otp, send_otp_sms, is_otp_valid
 
 
-def get_tokens_for_user(user):
-    """Generate JWT access + refresh tokens for a user."""
-    refresh = RefreshToken.for_user(user)
-    return {
-        'refresh': str(refresh),
-        'access':  str(refresh.access_token),
-    }
+def login_view(request):
+    # Already logged in → redirect to dashboard
+    if request.user.is_authenticated:
+        return redirect_by_role(request.user)
+    return render(request, 'users/login.html')
 
 
-class SendOTPView(APIView):
-    """
-    POST /api/auth/send-otp/
-    Body: { "phone": "9876543210" }
+def send_otp_view(request):
+    if request.method != 'POST':
+        return redirect('login')
 
-    Creates user if doesn't exist, sends OTP via SMS.
-    """
-    permission_classes = [permissions.AllowAny]
+    phone  = request.POST.get('phone', '').strip()
+    intent = request.POST.get('intent', 'seeker')   # ← from signup form
 
-    def post(self, request):
-        phone = request.data.get('phone', '').strip()
+    if not phone or len(phone) != 10 or not phone.isdigit():
+        messages.error(request, 'Enter a valid 10-digit mobile number')
+        return redirect('login')
 
-        if not phone or len(phone) != 10:
-            return Response(
-                {'error': 'Enter a valid 10-digit phone number'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    user, created = User.objects.get_or_create(phone=phone)
+    otp = generate_otp()
+    user.otp = otp
+    user.otp_created_at = timezone.now()
+    user.save()
 
-        # Get or create user with this phone
-        user, created = User.objects.get_or_create(phone=phone)
+    send_otp_sms(phone, otp)
 
-        # Generate OTP and save to DB
-        otp = generate_otp()
-        user.otp            = otp
-        user.otp_created_at = timezone.now()
-        user.save()
-
-        # Send SMS
-        sent = send_otp_sms(phone, otp)
-
-        if sent:
-            return Response({
-                'message': f'OTP sent to {phone}',
-                'new_user': created   # frontend can show profile setup if True
-            })
-        else:
-            return Response(
-                {'error': 'Failed to send OTP. Try again.'},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE
-            )
+    return render(request, 'users/login.html', {
+        'otp_sent': True,
+        'phone':    phone,
+        'intent':   intent,    # ← pass intent to OTP step
+    })
 
 
-class VerifyOTPView(APIView):
-    """
-    POST /api/auth/verify-otp/
-    Body: { "phone": "9876543210", "otp": "847291" }
+def verify_otp_view(request):
+    if request.method != 'POST':
+        return redirect('login')
 
-    Verifies OTP, returns JWT tokens on success.
-    """
-    permission_classes = [permissions.AllowAny]
+    phone  = request.POST.get('phone', '').strip()
+    otp    = request.POST.get('otp', '').strip()
+    intent = request.POST.get('intent', 'seeker')
 
-    def post(self, request):
-        phone = request.data.get('phone', '').strip()
-        otp   = request.data.get('otp', '').strip()
+    try:
+        user = User.objects.get(phone=phone)
+    except User.DoesNotExist:
+        messages.error(request, 'Phone not found. Please try again.')
+        return redirect('login')
 
-        try:
-            user = User.objects.get(phone=phone)
-        except User.DoesNotExist:
-            return Response(
-                {'error': 'Phone number not found. Please request OTP first.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+    valid, message = is_otp_valid(user, otp)
 
-        valid, message = is_otp_valid(user, otp)
-
-        if not valid:
-            return Response(
-                {'error': message},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Clear OTP after successful verification (security)
-        user.otp            = None
-        user.otp_created_at = None
-        user.save()
-
-        tokens = get_tokens_for_user(user)
-
-        return Response({
-            'message': 'Login successful',
-            'tokens':  tokens,
-            'user': {
-                'id':        user.id,
-                'phone':     user.phone,
-                'full_name': user.full_name,
-                'role':      user.role,
-                'city':      user.city,
-            }
+    if not valid:
+        messages.error(request, message)
+        return render(request, 'users/login.html', {
+            'otp_sent': True,
+            'phone':    phone,
+            'intent':   intent,
         })
 
+    user.otp = None
+    user.otp_created_at = None
+    user.save()
 
-class CompleteProfileView(APIView):
-    """
-    POST /api/auth/complete-profile/
-    New users fill in their name, role, city after first login.
-    """
-    permission_classes = [permissions.IsAuthenticated]
+    login(request, user)
 
-    def post(self, request):
-        user = request.user
-        user.full_name = request.data.get('full_name', user.full_name)
-        user.role      = request.data.get('role', user.role)
-        user.city      = request.data.get('city', user.city)
-        user.address   = request.data.get('address', user.address)
-        user.email     = request.data.get('email', user.email)
+    # New user → set their intent as role hint and send to profile
+    if not user.full_name:
+        request.session['intent'] = intent
+        return redirect('complete_profile')
+
+    return redirect_by_role(user)
+
+
+def logout_view(request):
+    logout(request)
+    messages.info(request, 'Logged out successfully.')
+    return redirect('login')
+
+
+@login_required
+def complete_profile_view(request):
+    if request.method == 'POST':
+        user           = request.user
+        user.full_name = request.POST.get('full_name', '').strip()
+        user.role      = request.POST.get('role', 'seeker')
+        user.city      = request.POST.get('city', '').strip()
+        user.address   = request.POST.get('address', '').strip()
         user.save()
+        messages.success(request, 'Profile saved!')
+        return redirect_by_role(user)
 
-        return Response({
-            'message': 'Profile updated',
-            'user': {
-                'id':        user.id,
-                'phone':     user.phone,
-                'full_name': user.full_name,
-                'role':      user.role,
-                'city':      user.city,
-            }
-        })
+    # Pre-select role from signup intent
+    intent = request.session.get('intent', 'seeker')
+    return render(request, 'users/complete_profile.html', {'intent': intent})
+
+
+def redirect_by_role(user):
+    if user.role == 'recruiter':
+        return redirect('recruiter_dashboard')
+    return redirect('seeker_dashboard')

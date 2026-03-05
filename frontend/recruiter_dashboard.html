@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>KaamMilao — Recruiter Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI'; background:#FDF6EC; margin:0 }
+        nav { background:#1A1208; padding:1rem 5%; display:flex; justify-content:space-between; align-items:center }
+        .logo { color:white; font-weight:700 }
+        .logo span { color:#F4511E }
+        .logout { background:transparent; border:1px solid rgba(255,255,255,0.3); color:white; padding:0.4rem 1rem; border-radius:6px; cursor:pointer }
+        .container { padding:2rem 5% }
+        .card { background:white; padding:1.5rem; border-radius:12px; border:1px solid #EDD9B8; margin-bottom:1.5rem }
+        input, select { width:100%; padding:0.7rem; margin-bottom:1rem; border:1.5px solid #EDD9B8; border-radius:8px }
+        button { padding:0.7rem 1.5rem; background:#F4511E; color:white; border:none; border-radius:8px; cursor:pointer }
+        .job-card { background:white; padding:1rem; border-radius:12px; border:1px solid #EDD9B8; margin-bottom:1rem }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="logo">Kaam<span>Milao</span></div>
+    <button class="logout" onclick="logout()">Logout</button>
+</nav>
+
+<div class="container">
+
+    <div class="card">
+        <h3>Post New Job</h3>
+        <input type="text" id="title" placeholder="Job Title">
+        <input type="text" id="category" placeholder="Category">
+        <input type="text" id="city" placeholder="City">
+        <input type="text" id="area" placeholder="Area">
+        <input type="text" id="pay" placeholder="Pay (₹)">
+        <button onclick="postJob()">Post Job</button>
+    </div>
+
+    <h3>Your Posted Jobs</h3>
+    <div id="jobsContainer">Loading...</div>
+
+</div>
+
+<script src="config.js"></script>
+<script>
+if (!getToken()) window.location.href = 'login.html'
+
+function logout(){
+    localStorage.clear()
+    window.location.href = 'login.html'
+}
+
+async function postJob(){
+    const res = await fetch(`${API_BASE}/jobs/`, {
+        method:'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+            title: document.getElementById('title').value,
+            category: document.getElementById('category').value,
+            city: document.getElementById('city').value,
+            area: document.getElementById('area').value,
+            pay: document.getElementById('pay').value
+        })
+    })
+    if(res.ok){
+        alert("Job posted successfully!")
+        loadMyJobs()
+    } else {
+        alert("Error posting job")
+    }
+}
+
+async function loadMyJobs(){
+    const res = await fetch(`${API_BASE}/jobs/my/`, { headers: authHeaders() })
+    const jobs = await res.json()
+
+    const container = document.getElementById('jobsContainer')
+    if(!jobs.length){
+        container.innerHTML = "No jobs posted yet."
+        return
+    }
+
+    container.innerHTML = jobs.map(job => `
+        <div class="job-card">
+            <strong>${job.title}</strong><br>
+            ${job.city} — ₹${job.pay}
+        </div>
+    `).join('')
+}
+
+loadMyJobs()
+</script>
+
+</body>
+</html>

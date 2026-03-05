@@ -6,6 +6,17 @@ from .serializers import ChatRoomSerializer, MessageSerializer
 from users.models import User
 from jobs.models import Job
 
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from .models import ChatRoom
+
+
+@login_required
+def chat_list(request):
+    rooms = ChatRoom.objects.filter(seeker=request.user) | \
+            ChatRoom.objects.filter(recruiter=request.user)
+    return render(request, 'chat/chat_list.html', {'rooms': rooms})
+
 
 class GetOrCreateRoomView(APIView):
     """

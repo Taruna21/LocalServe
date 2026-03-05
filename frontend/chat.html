@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>KaamMilao — Chat</title>
+    <style>
+        body { font-family:'Segoe UI'; background:#FDF6EC; margin:0 }
+        .container { padding:2rem }
+        #messages { height:300px; overflow-y:auto; background:white; padding:1rem; border-radius:12px; border:1px solid #EDD9B8; margin-bottom:1rem }
+        input { padding:0.7rem; width:80%; border-radius:8px; border:1px solid #EDD9B8 }
+        button { padding:0.7rem 1rem; background:#F4511E; color:white; border:none; border-radius:8px }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h3>Chat</h3>
+    <div id="messages"></div>
+    <input type="text" id="msgInput" placeholder="Type message">
+    <button onclick="sendMessage()">Send</button>
+</div>
+
+<script src="config.js"></script>
+<script>
+const socket = new WebSocket(`${WS_BASE}/chat/`)
+
+socket.onmessage = function(e){
+    const data = JSON.parse(e.data)
+    document.getElementById('messages').innerHTML += `<div>${data.message}</div>`
+}
+
+function sendMessage(){
+    const msg = document.getElementById('msgInput').value
+    socket.send(JSON.stringify({ message: msg }))
+    document.getElementById('msgInput').value = ''
+}
+</script>
+
+</body>
+</html>
