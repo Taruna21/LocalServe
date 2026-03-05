@@ -1,0 +1,134 @@
+{% load notif_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}KaamMilao{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --orange: #F4511E;
+            --dark:   #1A1208;
+            --cream:  #FDF6EC;
+            --mid:    #F5ECD6;
+            --text:   #3D2B0E;
+            --muted:  #9E8060;
+            --border: #EDD9B8;
+            --green:  #2E7D32;
+            --red:    #c0392b;
+        }
+        body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); }
+
+        nav {
+            background: var(--dark); padding: 1rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .logo { color: white; font-family: 'Playfair Display', serif; font-size: 1.5rem; text-decoration: none; }
+        .logo span { color: var(--orange); }
+        .nav-right { display: flex; align-items: center; gap: 1.2rem; }
+        .nav-link { color: rgba(255,255,255,0.65); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
+        .nav-link:hover { color: var(--orange); }
+        .nav-user { color: rgba(255,255,255,0.5); font-size: 0.85rem; }
+
+        .btn { padding: 0.5rem 1.2rem; border-radius: 6px; font-size: 0.88rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; display: inline-block; font-family: inherit; transition: all 0.2s; }
+        .btn-primary { background: var(--orange); color: white; }
+        .btn-primary:hover { background: #FF7043; }
+        .btn-dark { background: var(--dark); color: white; }
+        .btn-dark:hover { background: #2D1F0A; }
+        .btn-outline { background: transparent; border: 1.5px solid rgba(255,255,255,0.3); color: white; }
+        .btn-outline:hover { border-color: var(--orange); color: var(--orange); }
+        .btn-sm { padding: 0.35rem 0.9rem; font-size: 0.8rem; }
+        .btn-danger { background: #FFEBEE; color: var(--red); border: 1px solid #FFCDD2; }
+
+        .container { padding: 2rem 5%; max-width: 1200px; margin: 0 auto; }
+        .card { background: white; border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border); }
+
+        .form-group { margin-bottom: 1.2rem; }
+        label { font-size: 0.85rem; font-weight: 600; color: var(--text); display: block; margin-bottom: 0.4rem; }
+        input, select, textarea {
+            width: 100%; padding: 0.75rem 1rem;
+            border: 1.5px solid var(--border); border-radius: 8px;
+            font-size: 0.9rem; outline: none; font-family: inherit;
+            background: var(--cream); color: var(--text);
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus, textarea:focus { border-color: var(--orange); background: white; }
+
+        .alerts { padding: 1rem 5% 0; }
+        .alert { padding: 0.8rem 1.2rem; border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.88rem; }
+        .alert-error   { background: #FFEBEE; color: var(--red);   border: 1px solid #FFCDD2; }
+        .alert-success { background: #E8F5E9; color: var(--green); border: 1px solid #C8E6C9; }
+        .alert-info    { background: #E3F2FD; color: #1565C0;      border: 1px solid #BBDEFB; }
+
+        .badge { display: inline-block; padding: 0.25rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+        .badge-pending     { background: #FFF3E0; color: #E65100; }
+        .badge-shortlisted { background: #E8F5E9; color: var(--green); }
+        .badge-rejected    { background: #FFEBEE; color: var(--red); }
+        .badge-hired       { background: #E3F2FD; color: #1565C0; }
+        .badge-open        { background: #E8F5E9; color: var(--green); }
+        .badge-closed      { background: #FFEBEE; color: var(--red); }
+
+        /* NOTIFICATION BELL */
+        .notif-bell {
+            position: relative; text-decoration: none;
+            font-size: 1.1rem; padding: 0.3rem;
+            display: flex; align-items: center;
+        }
+        .notif-badge {
+            position: absolute; top: -4px; right: -6px;
+            background: var(--orange); color: white;
+            font-size: 0.65rem; font-weight: 700;
+            width: 18px; height: 18px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid var(--dark);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<nav>
+    <a href="/" class="logo">Kaam<span>Milao</span></a>
+    <div class="nav-right">
+        {% if user.is_authenticated %}
+            <span class="nav-user">👤 {{ user.full_name|default:user.phone }}</span>
+            {% if user.role == 'seeker' %}
+                <a href="{% url 'seeker_dashboard' %}" class="nav-link">Find Jobs</a>
+                <a href="{% url 'my_applications' %}"  class="nav-link">My Applications</a>
+            {% elif user.role == 'recruiter' %}
+                <a href="{% url 'recruiter_dashboard' %}" class="nav-link">My Jobs</a>
+                <a href="{% url 'post_job' %}"            class="nav-link">+ Post Job</a>
+            {% endif %}
+            <a href="{% url 'chat_list' %}" class="nav-link">💬 Messages</a>
+
+            <!-- 🔔 BELL -->
+            {% unread_count user as count %}
+            <a href="{% url 'notifications' %}" class="notif-bell">
+                🔔
+                {% if count > 0 %}
+                    <span class="notif-badge">{{ count }}</span>
+                {% endif %}
+            </a>
+
+            <a href="{% url 'logout' %}" class="btn btn-outline btn-sm">Logout</a>
+        {% else %}
+            <a href="{% url 'login' %}" class="btn btn-primary btn-sm">Login</a>
+        {% endif %}
+    </div>
+</nav>
+
+{% if messages %}
+<div class="alerts">
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% block content %}{% endblock %}
+{% block extra_js %}{% endblock %}
+</body>
+</html>

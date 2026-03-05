@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block title %}Post a Job — KaamMilao{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-wrap { max-width:680px; margin:2.5rem auto; padding:0 1.5rem; }
+    .form-card { background:white; border-radius:16px; padding:2.5rem; border:1px solid var(--border); box-shadow:0 4px 20px rgba(0,0,0,0.06); }
+    .form-card h2 { font-family:'Playfair Display',serif; font-size:1.8rem; color:var(--dark); margin-bottom:0.3rem; }
+    .form-card p  { color:var(--muted); font-size:0.9rem; margin-bottom:2rem; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .form-group { margin-bottom:1.2rem; }
+    .required { color:var(--orange); }
+    .submit-btn {
+        width:100%; padding:1rem;
+        background:var(--orange); color:white;
+        border:none; border-radius:10px;
+        font-size:1rem; font-weight:700;
+        cursor:pointer; font-family:inherit;
+        box-shadow:0 4px 12px rgba(244,81,30,0.3);
+        transition:all 0.2s; margin-top:0.5rem;
+    }
+    .submit-btn:hover { background:#e8440f; transform:translateY(-1px); }
+    .back-link { display:inline-flex; align-items:center; gap:0.4rem; color:var(--muted); text-decoration:none; font-size:0.88rem; margin-bottom:1.5rem; }
+    .back-link:hover { color:var(--orange); }
+    textarea { min-height:100px; resize:vertical; }
+    @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+    <a href="{% url 'recruiter_dashboard' %}" class="back-link">← Back to My Jobs</a>
+    <div class="form-card">
+        <h2>Post a New Job</h2>
+        <p>Fill in the details below to start receiving applications</p>
+
+        <form method="POST" action="{% url 'post_job' %}">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label>Job Title <span class="required">*</span></label>
+                <input type="text" name="title"
+                       placeholder="e.g. Experienced Cook Needed"
+                       value="{{ form_data.title|default:'' }}" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Category <span class="required">*</span></label>
+                    <select name="category" required>
+                        <option value="">Select category</option>
+                        {% for val, label in categories %}
+                            <option value="{{ val }}"
+                                {% if form_data.category == val %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="status">
+                        <option value="open">Open</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Pay Amount (₹) <span class="required">*</span></label>
+                    <input type="number" name="pay_amount"
+                           placeholder="e.g. 500"
+                           value="{{ form_data.pay_amount|default:'' }}"
+                           min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Pay Type <span class="required">*</span></label>
+                    <select name="pay_type">
+                        {% for val, label in pay_type_choices %}
+                            <option value="{{ val }}"
+                                {% if form_data.pay_type == val %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>City <span class="required">*</span></label>
+                    <input type="text" name="city"
+                           placeholder="e.g. Dehradun"
+                           value="{{ form_data.city|default:'' }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Area / Locality</label>
+                    <input type="text" name="area"
+                           placeholder="e.g. Rajpur Road"
+                           value="{{ form_data.area|default:'' }}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Pincode</label>
+                <input type="text" name="pincode"
+                       placeholder="6-digit pincode"
+                       maxlength="6"
+                       value="{{ form_data.pincode|default:'' }}">
+            </div>
+
+            <div class="form-group">
+                <label>Job Description</label>
+                <textarea name="description"
+                          placeholder="Describe the work, requirements, timings, etc.">{{ form_data.description|default:'' }}</textarea>
+            </div>
+
+            <button type="submit" class="submit-btn">Post Job →</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

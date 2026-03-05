@@ -1,94 +1,122 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>KaamMilao — Recruiter Dashboard</title>
-    <style>
-        body { font-family: 'Segoe UI'; background:#FDF6EC; margin:0 }
-        nav { background:#1A1208; padding:1rem 5%; display:flex; justify-content:space-between; align-items:center }
-        .logo { color:white; font-weight:700 }
-        .logo span { color:#F4511E }
-        .logout { background:transparent; border:1px solid rgba(255,255,255,0.3); color:white; padding:0.4rem 1rem; border-radius:6px; cursor:pointer }
-        .container { padding:2rem 5% }
-        .card { background:white; padding:1.5rem; border-radius:12px; border:1px solid #EDD9B8; margin-bottom:1.5rem }
-        input, select { width:100%; padding:0.7rem; margin-bottom:1rem; border:1.5px solid #EDD9B8; border-radius:8px }
-        button { padding:0.7rem 1.5rem; background:#F4511E; color:white; border:none; border-radius:8px; cursor:pointer }
-        .job-card { background:white; padding:1rem; border-radius:12px; border:1px solid #EDD9B8; margin-bottom:1rem }
-    </style>
-</head>
-<body>
+{% extends 'base.html' %}
+{% block title %}My Jobs — KaamMilao{% endblock %}
 
-<nav>
-    <div class="logo">Kaam<span>Milao</span></div>
-    <button class="logout" onclick="logout()">Logout</button>
-</nav>
+{% block extra_css %}
+<style>
+    .page-hero {
+        background:var(--dark); padding:2.5rem 5%;
+        background-image:radial-gradient(ellipse at 80% 50%, rgba(244,81,30,0.15) 0%, transparent 60%);
+        display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;
+    }
+    .page-hero h1 { font-family:'Playfair Display',serif; font-size:2rem; color:white; margin-bottom:0.3rem; }
+    .page-hero p  { color:rgba(255,255,255,0.45); font-size:0.9rem; }
+    .post-btn {
+        background:var(--orange); color:white; border:none;
+        padding:0.8rem 1.8rem; border-radius:10px;
+        font-weight:700; font-size:0.95rem;
+        cursor:pointer; font-family:inherit;
+        text-decoration:none; display:inline-block;
+        box-shadow:0 4px 12px rgba(244,81,30,0.3);
+        transition:all 0.2s;
+    }
+    .post-btn:hover { background:#e8440f; transform:translateY(-1px); }
+    .jobs-list { padding:2rem 5%; display:grid; gap:1.2rem; }
+    .job-row {
+        background:white; border-radius:14px;
+        border:1px solid var(--border);
+        overflow:hidden;
+        transition:box-shadow 0.2s;
+    }
+    .job-row:hover { box-shadow:0 4px 16px rgba(0,0,0,0.08); }
+    .job-row-main {
+        padding:1.5rem; display:flex;
+        justify-content:space-between; align-items:flex-start;
+        gap:1rem; flex-wrap:wrap;
+    }
+    .job-cat {
+        display:inline-block; background:#FBE9E7;
+        color:var(--orange); border-radius:20px;
+        padding:0.2rem 0.8rem; font-size:0.72rem;
+        font-weight:700; margin-bottom:0.5rem;
+        text-transform:uppercase; letter-spacing:0.5px;
+    }
+    .job-title  { font-size:1.1rem; font-weight:700; color:var(--dark); margin-bottom:0.4rem; }
+    .job-meta   { font-size:0.82rem; color:var(--muted); display:flex; gap:1rem; flex-wrap:wrap; }
+    .job-pay    { font-size:1rem; font-weight:700; color:#2E7D32; margin-top:0.5rem; }
+    .job-actions { display:flex; gap:0.6rem; align-items:center; flex-shrink:0; }
+    .btn-view {
+        padding:0.5rem 1rem; background:var(--dark); color:white;
+        border-radius:8px; font-size:0.82rem; font-weight:600;
+        text-decoration:none; transition:all 0.2s;
+    }
+    .btn-view:hover { background:#2D1F0A; }
+    .btn-del {
+        padding:0.5rem 0.8rem; background:#FFEBEE; color:#c0392b;
+        border:1px solid #FFCDD2; border-radius:8px;
+        font-size:0.82rem; font-weight:600; cursor:pointer;
+        font-family:inherit; transition:all 0.2s;
+    }
+    .btn-del:hover { background:#FFCDD2; }
+    .app-count {
+        background:var(--mid); padding:0.7rem 1.5rem;
+        border-top:1px solid var(--border);
+        font-size:0.82rem; color:var(--muted);
+        display:flex; align-items:center; gap:0.5rem;
+    }
+    .app-count strong { color:var(--orange); }
+    .empty-state { text-align:center; padding:5rem 2rem; color:var(--muted); }
+    .empty-state .icon { font-size:3.5rem; margin-bottom:1rem; }
+    .empty-state h3 { font-size:1.2rem; color:var(--dark); margin-bottom:0.5rem; }
+</style>
+{% endblock %}
 
-<div class="container">
-
-    <div class="card">
-        <h3>Post New Job</h3>
-        <input type="text" id="title" placeholder="Job Title">
-        <input type="text" id="category" placeholder="Category">
-        <input type="text" id="city" placeholder="City">
-        <input type="text" id="area" placeholder="Area">
-        <input type="text" id="pay" placeholder="Pay (₹)">
-        <button onclick="postJob()">Post Job</button>
+{% block content %}
+<div class="page-hero">
+    <div>
+        <h1>My Job Postings 📋</h1>
+        <p>{{ user.full_name }} · {{ jobs|length }} job{{ jobs|length|pluralize }} posted</p>
     </div>
-
-    <h3>Your Posted Jobs</h3>
-    <div id="jobsContainer">Loading...</div>
-
+    <a href="{% url 'post_job' %}" class="post-btn">+ Post New Job</a>
 </div>
 
-<script src="config.js"></script>
-<script>
-if (!getToken()) window.location.href = 'login.html'
-
-function logout(){
-    localStorage.clear()
-    window.location.href = 'login.html'
-}
-
-async function postJob(){
-    const res = await fetch(`${API_BASE}/jobs/`, {
-        method:'POST',
-        headers: authHeaders(),
-        body: JSON.stringify({
-            title: document.getElementById('title').value,
-            category: document.getElementById('category').value,
-            city: document.getElementById('city').value,
-            area: document.getElementById('area').value,
-            pay: document.getElementById('pay').value
-        })
-    })
-    if(res.ok){
-        alert("Job posted successfully!")
-        loadMyJobs()
-    } else {
-        alert("Error posting job")
-    }
-}
-
-async function loadMyJobs(){
-    const res = await fetch(`${API_BASE}/jobs/my/`, { headers: authHeaders() })
-    const jobs = await res.json()
-
-    const container = document.getElementById('jobsContainer')
-    if(!jobs.length){
-        container.innerHTML = "No jobs posted yet."
-        return
-    }
-
-    container.innerHTML = jobs.map(job => `
-        <div class="job-card">
-            <strong>${job.title}</strong><br>
-            ${job.city} — ₹${job.pay}
+<div class="jobs-list">
+    {% for job in jobs %}
+    <div class="job-row">
+        <div class="job-row-main">
+            <div>
+                <span class="job-cat">{{ job.get_category_display }}</span>
+                <div class="job-title">{{ job.title }}</div>
+                <div class="job-meta">
+                    <span>📍 {% if job.area %}{{ job.area }}, {% endif %}{{ job.city }}</span>
+                    <span>📅 {{ job.created_at|date:"d M Y" }}</span>
+                    <span class="badge badge-{{ job.status }}">{{ job.status }}</span>
+                </div>
+                <div class="job-pay">₹{{ job.pay_amount }} / {{ job.get_pay_type_display }}</div>
+            </div>
+            <div class="job-actions">
+                <a href="{% url 'job_applicants' job.id %}" class="btn-view">
+                    👥 View Applicants
+                </a>
+                <form method="POST" action="{% url 'delete_job' job.id %}"
+                      onsubmit="return confirm('Delete this job?')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-del">🗑</button>
+                </form>
+            </div>
         </div>
-    `).join('')
-}
-
-loadMyJobs()
-</script>
-
-</body>
-</html>
+        <div class="app-count">
+            👥 <strong>{{ job.application_count }}</strong> application{{ job.application_count|pluralize }} received
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <div class="icon">📭</div>
+        <h3>No jobs posted yet</h3>
+        <p>Post your first job and start receiving applications!</p>
+        <a href="{% url 'post_job' %}" class="post-btn" style="margin-top:1.5rem;display:inline-block">
+            + Post Your First Job
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

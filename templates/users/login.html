@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}Login — KaamMilao{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-page { min-height: 90vh; display: grid; grid-template-columns: 1fr 1fr; }
+    .auth-left {
+        background: var(--dark); padding: 4rem;
+        display: flex; flex-direction: column; justify-content: center;
+        background-image: radial-gradient(ellipse at 80% 20%, rgba(244,81,30,0.2) 0%, transparent 60%);
+    }
+    .big-logo { font-family:'Playfair Display',serif; font-size:3.5rem; color:white; margin-bottom:0.4rem; }
+    .big-logo span { color:var(--orange); }
+    .tagline { color:rgba(255,255,255,0.45); font-size:1rem; margin-bottom:3rem; }
+    .feature-list { display:grid; gap:1.5rem; }
+    .feature-item { display:flex; gap:1rem; align-items:center; }
+    .feat-icon { width:44px; height:44px; border-radius:12px; background:rgba(244,81,30,0.2); border:1px solid rgba(244,81,30,0.3); display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0; }
+    .feat-text strong { color:white; display:block; font-size:0.92rem; }
+    .feat-text span   { color:rgba(255,255,255,0.4); font-size:0.8rem; }
+    .auth-right { display:flex; align-items:center; justify-content:center; padding:3rem 2rem; background:var(--cream); }
+    .auth-card { width:100%; max-width:400px; }
+    .form-title { font-family:'Playfair Display',serif; font-size:1.8rem; color:var(--dark); margin-bottom:0.3rem; }
+    .form-sub { color:var(--muted); font-size:0.88rem; margin-bottom:1.8rem; }
+    .form-sub a { color:var(--orange); text-decoration:none; font-weight:600; }
+    .submit-btn { width:100%; padding:0.9rem; background:var(--orange); color:white; border:none; border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer; font-family:inherit; box-shadow:0 4px 12px rgba(244,81,30,0.3); transition:all 0.2s; }
+    .submit-btn:hover { background:#e8440f; transform:translateY(-1px); }
+    .divider { display:flex; align-items:center; gap:0.8rem; margin:1.2rem 0; font-size:0.8rem; color:var(--muted); }
+    .divider::before, .divider::after { content:''; flex:1; height:1px; background:var(--border); }
+    .signup-btn { width:100%; padding:0.85rem; background:white; border:1.5px solid var(--border); border-radius:10px; font-family:inherit; font-size:0.92rem; font-weight:600; color:var(--text); cursor:pointer; text-align:center; text-decoration:none; display:block; transition:all 0.2s; }
+    .signup-btn:hover { border-color:var(--orange); color:var(--orange); }
+    .password-wrap { position:relative; }
+    .password-wrap input { padding-right:3rem; }
+    .toggle-pw { position:absolute; right:1rem; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:1rem; color:var(--muted); }
+    @media(max-width:860px) { .auth-page { grid-template-columns:1fr; } .auth-left { display:none; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-left">
+        <div class="big-logo">Kaam<span>Milao</span></div>
+        <p class="tagline">Local jobs. Real work. Instant hire.</p>
+        <div class="feature-list">
+            <div class="feature-item">
+                <div class="feat-icon">📍</div>
+                <div class="feat-text"><strong>Jobs Near You</strong><span>Find work in your city instantly</span></div>
+            </div>
+            <div class="feature-item">
+                <div class="feat-icon">💼</div>
+                <div class="feat-text"><strong>Post & Hire</strong><span>Find skilled workers fast</span></div>
+            </div>
+            <div class="feature-item">
+                <div class="feat-icon">💬</div>
+                <div class="feat-text"><strong>Chat Directly</strong><span>Talk before you hire</span></div>
+            </div>
+            <div class="feature-item">
+                <div class="feat-icon">🔔</div>
+                <div class="feat-text"><strong>Live Notifications</strong><span>Never miss an update</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-right">
+        <div class="auth-card">
+            <div class="form-title">Welcome back 👋</div>
+            <p class="form-sub">Don't have an account? <a href="{% url 'signup' %}">Sign up free</a></p>
+
+            <form method="POST" action="{% url 'login' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>📱 Mobile Number</label>
+                    <input type="tel" name="phone" placeholder="10-digit number"
+                           maxlength="10" value="{{ phone|default:'' }}" autofocus required>
+                </div>
+                <div class="form-group">
+                    <label>🔒 Password</label>
+                    <div class="password-wrap">
+                        <input type="password" name="password" id="pwField"
+                               placeholder="Your password" required>
+                        <button type="button" class="toggle-pw" onclick="togglePw()">👁</button>
+                    </div>
+                </div>
+                <button type="submit" class="submit-btn">Login →</button>
+            </form>
+
+            <div class="divider">New here?</div>
+            <a href="{% url 'signup' %}" class="signup-btn">Create an Account</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePw() {
+    const f = document.getElementById('pwField')
+    f.type = f.type === 'password' ? 'text' : 'password'
+}
+</script>
+{% endblock %}

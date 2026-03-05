@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}Complete Profile — KaamMilao{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-page { min-height:90vh; display:flex; align-items:center; justify-content:center; padding:2rem; }
+    .profile-card { background:white; border-radius:20px; padding:3rem; width:100%; max-width:520px; border:1px solid var(--border); box-shadow:0 12px 40px rgba(0,0,0,0.08); }
+    h2 { font-family:'Playfair Display',serif; font-size:1.8rem; color:var(--dark); margin-bottom:0.3rem; }
+    .sub { color:var(--muted); font-size:0.9rem; margin-bottom:2rem; }
+    .role-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.2rem; }
+    .role-card { border:2px solid var(--border); border-radius:10px; padding:1.2rem; text-align:center; cursor:pointer; transition:all 0.2s; }
+    .role-card:hover { border-color:var(--orange); }
+    .role-card input[type="radio"] { display:none; }
+    .role-card.selected { border-color:var(--orange); background:#FBE9E7; }
+    .role-icon { font-size:2rem; margin-bottom:0.4rem; }
+    .role-name { font-weight:600; font-size:0.95rem; color:var(--dark); }
+    .role-desc { font-size:0.78rem; color:var(--muted); margin-top:0.2rem; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .submit-btn { width:100%; padding:0.9rem; background:var(--orange); color:white; border:none; border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer; font-family:inherit; box-shadow:0 4px 12px rgba(244,81,30,0.3); transition:all 0.2s; }
+    .submit-btn:hover { background:#e8440f; transform:translateY(-1px); }
+    .section-label { font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin:1.5rem 0 0.8rem; }
+    .password-wrap { position:relative; }
+    .password-wrap input { padding-right:3rem; }
+    .toggle-pw { position:absolute; right:1rem; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:1rem; color:var(--muted); }
+    @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="profile-card">
+        <h2>Almost there! 🎉</h2>
+        <p class="sub">Complete your profile to get started</p>
+
+        <form method="POST" action="{% url 'complete_profile' %}">
+            {% csrf_token %}
+
+            <p class="section-label">Who are you?</p>
+            <div class="role-grid" id="roleGrid">
+                <label class="role-card {% if intent != 'recruiter' %}selected{% endif %}" id="seekerCard">
+                    <input type="radio" name="role" value="seeker"
+                           {% if intent != 'recruiter' %}checked{% endif %}
+                           onchange="selectRole('seeker')">
+                    <div class="role-icon">👷</div>
+                    <div class="role-name">Job Seeker</div>
+                    <div class="role-desc">Looking for work</div>
+                </label>
+                <label class="role-card {% if intent == 'recruiter' %}selected{% endif %}" id="recruiterCard">
+                    <input type="radio" name="role" value="recruiter"
+                           {% if intent == 'recruiter' %}checked{% endif %}
+                           onchange="selectRole('recruiter')">
+                    <div class="role-icon">🏢</div>
+                    <div class="role-name">Recruiter</div>
+                    <div class="role-desc">Looking to hire</div>
+                </label>
+            </div>
+
+            <p class="section-label">Your Details</p>
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" name="full_name" placeholder="Your full name" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>City</label>
+                    <input type="text" name="city" placeholder="e.g. Dehradun" required>
+                </div>
+                <div class="form-group">
+                    <label>Address <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+                    <input type="text" name="address" placeholder="Area / Street">
+                </div>
+            </div>
+
+            <p class="section-label">Set Your Password</p>
+            <div class="form-group">
+                <label>Password</label>
+                <div class="password-wrap">
+                    <input type="password" name="password" id="pw1"
+                           placeholder="Min 6 characters" required>
+                    <button type="button" class="toggle-pw" onclick="togglePw('pw1')">👁</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Confirm Password</label>
+                <div class="password-wrap">
+                    <input type="password" name="password2" id="pw2"
+                           placeholder="Repeat password" required>
+                    <button type="button" class="toggle-pw" onclick="togglePw('pw2')">👁</button>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">Complete Setup →</button>
+        </form>
+    </div>
+</div>
+
+<script>
+selectRole('{{ intent|default:"seeker" }}')
+function selectRole(role) {
+    document.getElementById('seekerCard').classList.toggle('selected',    role === 'seeker')
+    document.getElementById('recruiterCard').classList.toggle('selected', role === 'recruiter')
+}
+function togglePw(id) {
+    const f = document.getElementById(id)
+    f.type = f.type === 'password' ? 'text' : 'password'
+}
+</script>
+{% endblock %}

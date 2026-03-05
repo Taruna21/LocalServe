@@ -20,32 +20,32 @@ class Job(models.Model):
         ('closed', 'Closed'),
         ('hired',  'Hired'),
     ]
-
-    PAY_TYPE_CHOICE = [
+    PAY_TYPE_CHOICES = [
         ('daily',   'Per Day'),
         ('monthly', 'Per Month'),
         ('hourly',  'Per Hour'),
     ]
-
-    title = models.CharField(max_length=200)
-    category = models.CharField(max_length=200, choices=CATEGORY_CHOICES)
+    posted_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='jobs_posted',
+        null=True,
+        blank=True
+    )
+    title       = models.CharField(max_length=200)
+    category    = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
     description = models.TextField(blank=True)
-
-    city = models.CharField(max_length=100)
-    area = models.CharField(max_length=100)
-    pincode = models.CharField(max_length=6, blank=True)
-
-    pay_amount = models.DecimalField(max_digits=8, decimal_places=2)
-    pay_type = models.CharField(max_length=20, choices=PAY_TYPE_CHOICE, default='daily')
-
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now_add=True)
+    city        = models.CharField(max_length=100)
+    area        = models.CharField(max_length=100, blank=True)
+    pincode     = models.CharField(max_length=10, blank=True)
+    pay_amount  = models.DecimalField(max_digits=8, decimal_places=2)
+    pay_type    = models.CharField(max_length=20, choices=PAY_TYPE_CHOICES, default='daily')
+    status      = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    created_at  = models.DateTimeField(auto_now_add=True)
+    updated_at  = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-created_at']   # newest jobs first by default
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"{self.title} - {self.city} ({self.status})"
-
-

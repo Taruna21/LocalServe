@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}Sign Up — KaamMilao{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-page { min-height:90vh; display:grid; grid-template-columns:1fr 1fr; }
+    .auth-left { background:var(--dark); padding:4rem; display:flex; flex-direction:column; justify-content:center; background-image:radial-gradient(ellipse at 80% 20%, rgba(244,81,30,0.2) 0%, transparent 60%); }
+    .big-logo { font-family:'Playfair Display',serif; font-size:3.5rem; color:white; margin-bottom:0.4rem; }
+    .big-logo span { color:var(--orange); }
+    .tagline { color:rgba(255,255,255,0.45); font-size:1rem; margin-bottom:3rem; }
+    .steps-list { display:grid; gap:1.2rem; }
+    .step-item { display:flex; gap:1rem; align-items:center; }
+    .step-num { width:32px; height:32px; border-radius:50%; background:var(--orange); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.9rem; flex-shrink:0; }
+    .step-text strong { color:white; display:block; font-size:0.92rem; }
+    .step-text span   { color:rgba(255,255,255,0.4); font-size:0.8rem; }
+    .auth-right { display:flex; align-items:center; justify-content:center; padding:3rem 2rem; background:var(--cream); }
+    .auth-card { width:100%; max-width:400px; }
+    .form-title { font-family:'Playfair Display',serif; font-size:1.8rem; color:var(--dark); margin-bottom:0.3rem; }
+    .form-sub { color:var(--muted); font-size:0.88rem; margin-bottom:1.8rem; }
+    .form-sub a { color:var(--orange); text-decoration:none; font-weight:600; }
+    .submit-btn { width:100%; padding:0.9rem; background:var(--orange); color:white; border:none; border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer; font-family:inherit; box-shadow:0 4px 12px rgba(244,81,30,0.3); transition:all 0.2s; }
+    .submit-btn:hover { background:#e8440f; transform:translateY(-1px); }
+    .otp-input { font-size:1.8rem !important; letter-spacing:1rem !important; text-align:center !important; font-weight:700 !important; padding:1rem !important; }
+    .otp-box { background:white; border-radius:14px; padding:1.5rem; border:1px solid var(--border); text-align:center; margin-bottom:1.5rem; }
+    .otp-box .icon { font-size:2.5rem; margin-bottom:0.5rem; }
+    .otp-box h3 { font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--dark); margin-bottom:0.3rem; }
+    .otp-box p  { color:var(--muted); font-size:0.85rem; margin-bottom:0; }
+    .otp-box a  { color:var(--orange); text-decoration:none; font-weight:600; }
+    .resend-row { text-align:center; margin-top:0.8rem; font-size:0.83rem; color:var(--muted); }
+    .resend-btn { background:none; border:none; color:var(--orange); font-weight:600; cursor:pointer; font-family:inherit; font-size:0.83rem; }
+    @media(max-width:860px) { .auth-page { grid-template-columns:1fr; } .auth-left { display:none; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-left">
+        <div class="big-logo">Kaam<span>Milao</span></div>
+        <p class="tagline">Join thousands of workers & employers</p>
+        <div class="steps-list">
+            <div class="step-item">
+                <div class="step-num">1</div>
+                <div class="step-text"><strong>Enter Phone Number</strong><span>We'll send you a verification OTP</span></div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">2</div>
+                <div class="step-text"><strong>Verify OTP</strong><span>Enter the 6-digit code we send</span></div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">3</div>
+                <div class="step-text"><strong>Complete Profile</strong><span>Set your name, city and password</span></div>
+            </div>
+            <div class="step-item">
+                <div class="step-num">4</div>
+                <div class="step-text"><strong>Start Using KaamMilao</strong><span>Find work or hire instantly</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-right">
+        <div class="auth-card">
+
+            {% if not otp_sent %}
+            <div class="form-title">Create Account ✨</div>
+            <p class="form-sub">Already have an account? <a href="{% url 'login' %}">Login</a></p>
+
+            <form method="POST" action="{% url 'send_otp' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>📱 Mobile Number</label>
+                    <input type="tel" name="phone" placeholder="10-digit number"
+                           maxlength="10" autofocus required>
+                </div>
+                <div class="form-group">
+                    <label>I want to</label>
+                    <select name="intent">
+                        <option value="seeker">👷 Find Work</option>
+                        <option value="recruiter">🏢 Hire People</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-btn">Send OTP →</button>
+            </form>
+
+            {% else %}
+            <div class="otp-box">
+                <div class="icon">📲</div>
+                <h3>Check your phone</h3>
+                <p>OTP sent to <strong>+91 {{ phone }}</strong><br>
+                <a href="{% url 'signup' %}">Wrong number? Change</a></p>
+            </div>
+
+            <form method="POST" action="{% url 'verify_otp' %}">
+                {% csrf_token %}
+                <input type="hidden" name="phone"  value="{{ phone }}">
+                <input type="hidden" name="intent" value="{{ intent|default:'seeker' }}">
+                <div class="form-group">
+                    <label>Enter 6-digit OTP</label>
+                    <input type="text" name="otp" class="otp-input"
+                           placeholder="000000" maxlength="6" autofocus required>
+                </div>
+                <button type="submit" class="submit-btn">Verify & Continue →</button>
+            </form>
+
+            <div class="resend-row">
+                Didn't receive it?
+                <form method="POST" action="{% url 'send_otp' %}" style="display:inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="phone"  value="{{ phone }}">
+                    <input type="hidden" name="intent" value="{{ intent|default:'seeker' }}">
+                    <button type="submit" class="resend-btn">Resend OTP</button>
+                </form>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

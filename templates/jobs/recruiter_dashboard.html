@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}My Jobs{% endblock %}
+{% block content %}
+<div class="container">
+    <h2 style="margin-bottom:1rem">My Posted Jobs</h2>
+    <a href="{% url 'post_job' %}" class="btn btn-primary" style="margin-bottom:1.5rem">+ Post New Job</a>
+    {% for job in jobs %}
+        <div class="card" style="margin-bottom:1rem">
+            <strong>{{ job.title }}</strong> — {{ job.city }}
+            <span class="badge badge-{{ job.status }}">{{ job.status }}</span>
+        </div>
+    {% empty %}
+        <p>No jobs posted yet.</p>
+    {% endfor %}
+</div>
+{% endblock %}

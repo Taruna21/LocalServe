@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Messages{% endblock %}
+{% block content %}
+<div class="container">
+    <h2 style="margin-bottom:1rem">💬 Messages</h2>
+    {% for room in rooms %}
+        <div class="card" style="margin-bottom:1rem">
+            <strong>{{ room.job.title }}</strong>
+            <div style="font-size:0.85rem;color:var(--muted)">
+                {{ room.seeker.full_name|default:room.seeker.phone }} ↔ {{ room.recruiter.full_name|default:room.recruiter.phone }}
+            </div>
+        </div>
+    {% empty %}
+        <p>No conversations yet.</p>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}My Applications{% endblock %}
+{% block content %}
+<div class="container">
+    <h2 style="margin-bottom:1rem">My Applications</h2>
+    {% for app in applications %}
+        <div class="card" style="margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center">
+            <div>
+                <strong>{{ app.job.title }}</strong>
+                <div style="font-size:0.85rem;color:var(--muted)">{{ app.job.city }} · ₹{{ app.job.pay_amount }}/{{ app.job.pay_type }}</div>
+            </div>
+            <span class="badge badge-{{ app.status }}">{{ app.status }}</span>
+        </div>
+    {% empty %}
+        <p>You haven't applied to any jobs yet. <a href="{% url 'seeker_dashboard' %}">Browse Jobs</a></p>
+    {% endfor %}
+</div>
+{% endblock %}
