@@ -1,78 +1,72 @@
-from rest_framework import generics, permissions
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from .models import ChatRoom, Message
-from .serializers import ChatRoomSerializer, MessageSerializer
-from users.models import User
-from jobs.models import Job
-
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import ChatRoom
+from django.contrib import messages
+from django.db.models import Q
+from .models import ChatRoom, Message
+from users.models import User
 
 
 @login_required
 def chat_list(request):
-    rooms = ChatRoom.objects.filter(seeker=request.user) | \
-            ChatRoom.objects.filter(recruiter=request.user)
+    user = request.user
+    rooms = ChatRoom.objects.filter(
+        Q(seeker=user) | Q(recruiter=user)
+    ).prefetch_related('messages')
+
+    # Attach last message and unread count to each room
+    for room in rooms:
+        room.last_msg    = room.messages.last()
+        room.other       = room.other_user(user)
+        room.unread      = room.messages.filter(is_read=False).exclude(sender=user).count()
+
     return render(request, 'chat/chat_list.html', {'rooms': rooms})
 
 
-class GetOrCreateRoomView(APIView):
-    """
-    POST /api/chat/room/
-    Seeker starts a chat with recruiter about a job.
-    Creates room if doesn't exist, returns existing if it does.
-    """
-    permission_classes = [permissions.IsAuthenticated]
+@login_required
+def chat_room(request, room_id):
+    room = get_object_or_404(ChatRoom, id=room_id)
+    user = request.user
 
-    def post(self, request):
-        job_id       = request.data.get('job_id')
-        recruiter_id = request.data.get('recruiter_id')
+    # Only participants can view
+    if user not in [room.seeker, room.recruiter]:
+        messages.error(request, 'You are not part of this conversation.')
+        return redirect('chat_list')
 
-        try:
-            job       = Job.objects.get(id=job_id)
-            recruiter = User.objects.get(id=recruiter_id)
-        except (Job.DoesNotExist, User.DoesNotExist):
-            return Response({'error': 'Job or recruiter not found'}, status=404)
+    # Mark messages as read
+    room.messages.filter(is_read=False).exclude(sender=user).update(is_read=True)
 
-        room, created = ChatRoom.objects.get_or_create(
-            job       = job,
-            seeker    = request.user,
-            recruiter = recruiter,
-        )
+    if request.method == 'POST':
+        content = request.POST.get('content', '').strip()
+        if content:
+            Message.objects.create(room=room, sender=user, content=content)
+        return redirect('chat_room', room_id=room.id)
 
-        return Response({
-            'room_id': room.id,
-            'created': created,
-            **ChatRoomSerializer(room).data
-        })
+    msgs      = room.messages.all()
+    other     = room.other_user(user)
+    return render(request, 'chat/chat_room.html', {
+        'room':  room,
+        'msgs':  msgs,
+        'other': other,
+    })
 
 
-class MyRoomsView(generics.ListAPIView):
-    """
-    GET /api/chat/rooms/
-    Returns all chat rooms for logged in user.
-    """
-    serializer_class   = ChatRoomSerializer
-    permission_classes = [permissions.IsAuthenticated]
+@login_required
+def start_chat(request, user_id):
+    """Start or open a DM with any user."""
+    other_user = get_object_or_404(User, id=user_id)
+    current    = request.user
 
-    def get_queryset(self):
-        user = self.request.user
-        return ChatRoom.objects.filter(
-            seeker=user
-        ) | ChatRoom.objects.filter(
-            recruiter=user
-        )
+    if other_user == current:
+        return redirect('chat_list')
 
+    # Figure out who is seeker and who is recruiter
+    if current.role == 'seeker':
+        seeker, recruiter = current, other_user
+    else:
+        seeker, recruiter = other_user, current
 
-class RoomMessagesView(generics.ListAPIView):
-    """
-    GET /api/chat/rooms/<room_id>/messages/
-    Returns message history for a room.
-    """
-    serializer_class   = MessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Message.objects.filter(room_id=self.kwargs['room_id'])
+    room, _ = ChatRoom.objects.get_or_create(
+        seeker=seeker,
+        recruiter=recruiter,
+    )
+    return redirect('chat_room', room_id=room.id)

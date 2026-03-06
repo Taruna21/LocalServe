@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block title %}Edit Profile — KaamMilao{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-wrap { max-width:640px; margin:2rem auto; padding:0 1.5rem; }
+    .back-link { display:inline-flex; align-items:center; gap:0.4rem; color:var(--muted); text-decoration:none; font-size:0.88rem; margin-bottom:1.5rem; }
+    .back-link:hover { color:var(--orange); }
+    .form-card { background:white; border-radius:16px; padding:2.5rem; border:1px solid var(--border); box-shadow:0 4px 20px rgba(0,0,0,0.06); }
+    .form-card h2 { font-family:'Playfair Display',serif; font-size:1.8rem; color:var(--dark); margin-bottom:1.8rem; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .section-label { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin:1.8rem 0 0.8rem; border-top:1px solid var(--border); padding-top:1.2rem; }
+    .submit-btn { width:100%; padding:1rem; background:var(--orange); color:white; border:none; border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer; font-family:inherit; box-shadow:0 4px 12px rgba(244,81,30,0.3); transition:all 0.2s; }
+    .submit-btn:hover { background:#e8440f; transform:translateY(-1px); }
+    .password-wrap { position:relative; }
+    .password-wrap input { padding-right:3rem; }
+    .toggle-pw { position:absolute; right:1rem; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--muted); }
+    .optional { color:var(--muted); font-weight:400; font-size:0.8rem; }
+    .photo-preview { width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid var(--border); margin-bottom:0.8rem; }
+    .avail-toggle { display:flex; align-items:center; gap:0.8rem; padding:0.8rem 1rem; background:var(--cream); border-radius:10px; border:1.5px solid var(--border); cursor:pointer; }
+    .avail-toggle input { width:auto; margin:0; }
+    @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+    <a href="{% url 'my_profile' %}" class="back-link">← Back to Profile</a>
+    <div class="form-card">
+        <h2>Edit Profile ✏️</h2>
+
+        <form method="POST" action="{% url 'edit_profile' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- PHOTO -->
+            <p class="section-label" style="border-top:none;padding-top:0;margin-top:0">Profile Photo</p>
+            {% if user.photo %}
+                <img src="{{ user.photo.url }}" class="photo-preview"><br>
+            {% endif %}
+            <div class="form-group">
+                <label>Upload Photo <span class="optional">(JPG/PNG, max 2MB)</span></label>
+                <input type="file" name="photo" accept="image/*">
+            </div>
+
+            <!-- PERSONAL -->
+            <p class="section-label">Personal Info</p>
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" name="full_name" value="{{ user.full_name }}" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Username <span class="optional">(optional)</span></label>
+                    <input type="text" name="username" value="{{ user.username|default:'' }}" placeholder="e.g. raju_cook">
+                </div>
+                <div class="form-group">
+                    <label>Email <span class="optional">(optional)</span></label>
+                    <input type="email" name="email" value="{{ user.email|default:'' }}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>City</label>
+                    <input type="text" name="city" value="{{ user.city }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Address <span class="optional">(optional)</span></label>
+                    <input type="text" name="address" value="{{ user.address }}">
+                </div>
+            </div>
+
+            <!-- BIO & SKILLS -->
+            <p class="section-label">About You</p>
+            <div class="form-group">
+                <label>Bio <span class="optional">(tell employers about yourself)</span></label>
+                <textarea name="bio" rows="3" placeholder="e.g. Experienced cook with 5 years in household kitchens...">{{ user.bio }}</textarea>
+            </div>
+            <div class="form-group">
+                <label>Skills <span class="optional">(space-separated)</span></label>
+                <input type="text" name="skills" value="{{ user.skills }}" placeholder="e.g. Cooking Cleaning Driving">
+            </div>
+
+            <!-- AVAILABILITY (seeker only) -->
+            {% if user.role == 'seeker' %}
+            <p class="section-label">Availability</p>
+            <label class="avail-toggle">
+                <input type="checkbox" name="is_available" {% if user.is_available %}checked{% endif %}>
+                <span>🟢 I am currently available for work</span>
+            </label>
+            {% endif %}
+
+            <!-- PASSWORD -->
+            <p class="section-label">Change Password <span class="optional">(leave blank to keep current)</span></p>
+            <div class="form-group">
+                <div class="password-wrap">
+                    <input type="password" name="new_password" id="pw1" placeholder="New password (min 6 chars)">
+                    <button type="button" class="toggle-pw" onclick="togglePw('pw1')">👁</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="password-wrap">
+                    <input type="password" name="new_password2" id="pw2" placeholder="Confirm new password">
+                    <button type="button" class="toggle-pw" onclick="togglePw('pw2')">👁</button>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">Save Changes →</button>
+        </form>
+    </div>
+</div>
+<script>
+function togglePw(id) {
+    const f = document.getElementById(id)
+    f.type = f.type === 'password' ? 'text' : 'password'
+}
+</script>
+{% endblock %}

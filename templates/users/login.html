@@ -3,12 +3,8 @@
 
 {% block extra_css %}
 <style>
-    .auth-page { min-height: 90vh; display: grid; grid-template-columns: 1fr 1fr; }
-    .auth-left {
-        background: var(--dark); padding: 4rem;
-        display: flex; flex-direction: column; justify-content: center;
-        background-image: radial-gradient(ellipse at 80% 20%, rgba(244,81,30,0.2) 0%, transparent 60%);
-    }
+    .auth-page { min-height:90vh; display:grid; grid-template-columns:1fr 1fr; }
+    .auth-left { background:var(--dark); padding:4rem; display:flex; flex-direction:column; justify-content:center; background-image:radial-gradient(ellipse at 80% 20%, rgba(244,81,30,0.2) 0%, transparent 60%); }
     .big-logo { font-family:'Playfair Display',serif; font-size:3.5rem; color:white; margin-bottom:0.4rem; }
     .big-logo span { color:var(--orange); }
     .tagline { color:rgba(255,255,255,0.45); font-size:1rem; margin-bottom:3rem; }
@@ -31,6 +27,7 @@
     .password-wrap { position:relative; }
     .password-wrap input { padding-right:3rem; }
     .toggle-pw { position:absolute; right:1rem; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:1rem; color:var(--muted); }
+    .login-hint { font-size:0.78rem; color:var(--muted); margin-top:0.3rem; }
     @media(max-width:860px) { .auth-page { grid-template-columns:1fr; } .auth-left { display:none; } }
 </style>
 {% endblock %}
@@ -68,9 +65,12 @@
             <form method="POST" action="{% url 'login' %}">
                 {% csrf_token %}
                 <div class="form-group">
-                    <label>📱 Mobile Number</label>
-                    <input type="tel" name="phone" placeholder="10-digit number"
-                           maxlength="10" value="{{ phone|default:'' }}" autofocus required>
+                    <label>Phone / Username / Email</label>
+                    <input type="text" name="identifier"
+                           placeholder="Enter any of the three"
+                           value="{{ identifier|default:'' }}"
+                           autofocus required>
+                    <p class="login-hint">e.g. 9876543210 &nbsp;·&nbsp; raju_cook &nbsp;·&nbsp; raju@email.com</p>
                 </div>
                 <div class="form-group">
                     <label>🔒 Password</label>

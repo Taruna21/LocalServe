@@ -4,21 +4,20 @@ from jobs.models import Job
 
 
 class ChatRoom(models.Model):
-    """
-    A conversation between a seeker and recruiter about a specific job.
-    Each unique seeker+recruiter+job combo gets one room.
-    """
-    job       = models.ForeignKey(Job,  on_delete=models.CASCADE, related_name='chat_rooms')
+    # job is now optional — allows direct DMs
+    job       = models.ForeignKey(Job,  on_delete=models.CASCADE, related_name='chat_rooms', null=True, blank=True)
     seeker    = models.ForeignKey(User, on_delete=models.CASCADE, related_name='seeker_rooms')
     recruiter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recruiter_rooms')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        # Only one room per seeker+recruiter+job combo
-        unique_together = ['job', 'seeker', 'recruiter']
+        unique_together = ['seeker', 'recruiter']
+
+    def other_user(self, user):
+        return self.recruiter if user == self.seeker else self.seeker
 
     def __str__(self):
-        return f"Room: {self.seeker.phone} ↔ {self.recruiter.phone} | {self.job.title}"
+        return f"{self.seeker.phone} ↔ {self.recruiter.phone}"
 
 
 class Message(models.Model):
@@ -29,7 +28,7 @@ class Message(models.Model):
     is_read   = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ['timestamp']  # oldest first
+        ordering = ['timestamp']
 
     def __str__(self):
         return f"{self.sender.phone}: {self.content[:50]}"

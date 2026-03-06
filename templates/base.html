@@ -31,7 +31,20 @@
         .nav-right { display: flex; align-items: center; gap: 1.2rem; }
         .nav-link { color: rgba(255,255,255,0.65); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
         .nav-link:hover { color: var(--orange); }
-        .nav-user { color: rgba(255,255,255,0.5); font-size: 0.85rem; }
+
+        /* Clickable profile in nav */
+        .nav-profile {
+            display: flex; align-items: center; gap: 0.5rem;
+            text-decoration: none; transition: opacity 0.2s;
+        }
+        .nav-profile:hover { opacity: 0.8; }
+        .nav-avatar {
+            width: 30px; height: 30px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--orange), #FF7043);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+        }
+        .nav-name { color: rgba(255,255,255,0.75); font-size: 0.85rem; font-weight: 500; }
 
         .btn { padding: 0.5rem 1.2rem; border-radius: 6px; font-size: 0.88rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; display: inline-block; font-family: inherit; transition: all 0.2s; }
         .btn-primary { background: var(--orange); color: white; }
@@ -71,20 +84,8 @@
         .badge-open        { background: #E8F5E9; color: var(--green); }
         .badge-closed      { background: #FFEBEE; color: var(--red); }
 
-        /* NOTIFICATION BELL */
-        .notif-bell {
-            position: relative; text-decoration: none;
-            font-size: 1.1rem; padding: 0.3rem;
-            display: flex; align-items: center;
-        }
-        .notif-badge {
-            position: absolute; top: -4px; right: -6px;
-            background: var(--orange); color: white;
-            font-size: 0.65rem; font-weight: 700;
-            width: 18px; height: 18px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            border: 2px solid var(--dark);
-        }
+        .notif-bell { position: relative; text-decoration: none; font-size: 1.1rem; padding: 0.3rem; display: flex; align-items: center; }
+        .notif-badge { position: absolute; top: -4px; right: -6px; background: var(--orange); color: white; font-size: 0.65rem; font-weight: 700; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid var(--dark); }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -94,7 +95,7 @@
     <a href="/" class="logo">Kaam<span>Milao</span></a>
     <div class="nav-right">
         {% if user.is_authenticated %}
-            <span class="nav-user">👤 {{ user.full_name|default:user.phone }}</span>
+
             {% if user.role == 'seeker' %}
                 <a href="{% url 'seeker_dashboard' %}" class="nav-link">Find Jobs</a>
                 <a href="{% url 'my_applications' %}"  class="nav-link">My Applications</a>
@@ -102,9 +103,9 @@
                 <a href="{% url 'recruiter_dashboard' %}" class="nav-link">My Jobs</a>
                 <a href="{% url 'post_job' %}"            class="nav-link">+ Post Job</a>
             {% endif %}
-            <a href="{% url 'chat_list' %}" class="nav-link">💬 Messages</a>
 
-            <!-- 🔔 BELL -->
+            <a href="{% url 'chat_list' %}" class="nav-link">💬</a>
+
             {% unread_count user as count %}
             <a href="{% url 'notifications' %}" class="notif-bell">
                 🔔
@@ -113,9 +114,19 @@
                 {% endif %}
             </a>
 
+            <!-- Clickable profile -->
+            <a href="{% url 'my_profile' %}" class="nav-profile">
+                <div class="nav-avatar">
+                    {{ user.full_name|first|upper|default:"?" }}
+                </div>
+                <span class="nav-name">{{ user.full_name|default:user.phone }}</span>
+            </a>
+
             <a href="{% url 'logout' %}" class="btn btn-outline btn-sm">Logout</a>
+
         {% else %}
-            <a href="{% url 'login' %}" class="btn btn-primary btn-sm">Login</a>
+            <a href="{% url 'login' %}"  class="nav-link">Login</a>
+            <a href="{% url 'signup' %}" class="btn btn-primary btn-sm">Sign Up</a>
         {% endif %}
     </div>
 </nav>

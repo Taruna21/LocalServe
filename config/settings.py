@@ -157,3 +157,7 @@ CHANNEL_LAYERS = {
 
 AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
 LOGIN_URL = '/login/'
+# Media files (profile photos)
+import os
+MEDIA_URL  = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
