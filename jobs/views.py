@@ -177,6 +177,16 @@ def job_applicants(request, job_id):
         'applications': apps,
     })
 
+@login_required
+def job_detail(request, job_id):
+    job = get_object_or_404(Job, id=job_id)
+    already_applied = Application.objects.filter(
+        job=job, applicant=request.user
+    ).exists()
+    return render(request, 'jobs/job_detail.html', {
+        'job':            job,
+        'already_applied': already_applied,
+    })
 
 @login_required
 def update_application_status(request, app_id):
