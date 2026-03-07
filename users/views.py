@@ -177,7 +177,7 @@ def complete_profile_view(request):
         user.set_password(password)
         user.save()
         login(request, user)
-        messages.success(request, f'Welcome to KaamMilao, {user.full_name}! 🎉')
+        messages.success(request, f'Welcome to LocalServe, {user.full_name}! 🎉')
         return redirect_by_role(user)
 
     intent = request.session.get('intent', 'seeker')
