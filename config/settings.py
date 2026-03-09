@@ -139,3 +139,6 @@ EMAIL_USE_SSL  = True
 
 # Resend
 RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
+
+# Brevo
+BREVO_API_KEY = os.environ.get('BREVO_API_KEY', '')
