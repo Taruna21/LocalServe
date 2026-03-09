@@ -18,35 +18,31 @@ def send_otp_sms(phone, otp):
 
 
 def _send_email(to_email, subject, body):
-    api_key = getattr(settings, 'RESEND_API_KEY', '')
+    api_key = getattr(settings, 'BREVO_API_KEY', '')
 
     if api_key:
         data = json.dumps({
-            "from":    "onboarding@resend.dev",
-            "to":      [to_email],
-            "subject": subject,
-            "text":    body,
+            "sender":      {"name": "LocalServe", "email": "pateltaruna552@gmail.com"},
+            "to":          [{"email": to_email}],
+            "subject":     subject,
+            "textContent": body,
         }).encode('utf-8')
 
         req = urllib.request.Request(
-            'https://api.resend.com/emails',
+            'https://api.brevo.com/v3/smtp/email',
             data=data,
             headers={
-                'Authorization': f'Bearer {api_key}',
-                'Content-Type':  'application/json',
+                'api-key':      api_key,
+                'Content-Type': 'application/json',
             },
             method='POST'
         )
         try:
             with urllib.request.urlopen(req, timeout=10) as resp:
-                result = json.loads(resp.read())
-                logger.info(f"Resend sent: {result}")
-                return True
-        except urllib.error.HTTPError as e:
-            logger.error(f"Resend error {e.code}: {e.read()}")
-            return False
+                logger.info(f"Brevo email sent to {to_email}")
+                return resp.status == 201
         except Exception as e:
-            logger.error(f"Resend error: {e}")
+            logger.error(f"Brevo error: {e}")
             return False
     else:
         try:
