@@ -131,3 +131,8 @@ if not DEBUG:
     SESSION_COOKIE_SECURE           = True
     CSRF_COOKIE_SECURE              = True
     SECURE_SSL_REDIRECT             = False  # Railway handles SSL
+
+# Override email to use SSL instead of TLS (Railway blocks 587)
+EMAIL_PORT     = 465
+EMAIL_USE_TLS  = False
+EMAIL_USE_SSL  = True
