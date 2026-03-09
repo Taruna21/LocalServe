@@ -21,9 +21,8 @@ def _send_email(to_email, subject, body):
     api_key = getattr(settings, 'RESEND_API_KEY', '')
 
     if api_key:
-        # Production — Resend HTTP API
         data = json.dumps({
-            "from":    "LocalServe <onboarding@resend.dev>",
+            "from":    "onboarding@resend.dev",
             "to":      [to_email],
             "subject": subject,
             "text":    body,
@@ -40,13 +39,16 @@ def _send_email(to_email, subject, body):
         )
         try:
             with urllib.request.urlopen(req, timeout=10) as resp:
-                logger.info(f"Resend email sent to {to_email}")
-                return resp.status == 200
+                result = json.loads(resp.read())
+                logger.info(f"Resend sent: {result}")
+                return True
+        except urllib.error.HTTPError as e:
+            logger.error(f"Resend error {e.code}: {e.read()}")
+            return False
         except Exception as e:
             logger.error(f"Resend error: {e}")
             return False
     else:
-        # Local — Gmail SMTP
         try:
             from django.core.mail import send_mail
             send_mail(
