@@ -115,3 +115,79 @@ function togglePw(id) {
 }
 </script>
 {% endblock %}
+{% block danger_zone %}
+<div style="max-width:700px;margin:0 auto 3rem;padding:0 5%">
+    <div style="background:white;border-radius:14px;border:1.5px solid #f5c6cb;padding:1.5rem">
+        <h3 style="color:#c0392b;font-family:'Playfair Display',serif;margin-bottom:0.5rem">⚠️ Danger Zone</h3>
+        <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.2rem">These actions are serious. Please be careful.</p>
+
+        <div style="display:flex;gap:1rem;flex-wrap:wrap">
+            <!-- Deactivate -->
+            <button onclick="document.getElementById('deactivateModal').classList.add('open')"
+                    style="padding:0.7rem 1.5rem;background:white;color:#E65100;border:1.5px solid #FFB74D;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit">
+                😴 Deactivate Account
+            </button>
+
+            <!-- Delete -->
+            <button onclick="document.getElementById('deleteModal').classList.add('open')"
+                    style="padding:0.7rem 1.5rem;background:white;color:#c0392b;border:1.5px solid #f5c6cb;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit">
+                🗑️ Delete Account
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Deactivate Modal -->
+<div class="modal-overlay" id="deactivateModal">
+    <div class="modal" style="max-width:420px">
+        <h3 style="color:#E65100">😴 Deactivate Account</h3>
+        <p style="color:var(--muted);font-size:0.88rem;margin-bottom:1.2rem">
+            Your account will be hidden. You can reactivate anytime by logging in.
+        </p>
+        <form method="POST" action="{% url 'deactivate_account' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Confirm your password</label>
+                <input type="password" name="password" placeholder="Enter password" required>
+            </div>
+            <div style="display:flex;gap:0.8rem;justify-content:flex-end;margin-top:1rem">
+                <button type="button" onclick="document.getElementById('deactivateModal').classList.remove('open')"
+                        style="padding:0.7rem 1.2rem;background:var(--cream);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-family:inherit">
+                    Cancel
+                </button>
+                <button type="submit"
+                        style="padding:0.7rem 1.2rem;background:#E65100;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit">
+                    Deactivate
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal" style="max-width:420px">
+        <h3 style="color:#c0392b">🗑️ Delete Account Permanently</h3>
+        <p style="color:var(--muted);font-size:0.88rem;margin-bottom:1.2rem">
+            This will permanently delete your account, all your jobs, applications and messages. <strong>This cannot be undone.</strong>
+        </p>
+        <form method="POST" action="{% url 'delete_account' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Confirm your password</label>
+                <input type="password" name="password" placeholder="Enter password" required>
+            </div>
+            <div style="display:flex;gap:0.8rem;justify-content:flex-end;margin-top:1rem">
+                <button type="button" onclick="document.getElementById('deleteModal').classList.remove('open')"
+                        style="padding:0.7rem 1.2rem;background:var(--cream);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-family:inherit">
+                    Cancel
+                </button>
+                <button type="submit"
+                        style="padding:0.7rem 1.2rem;background:#c0392b;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit">
+                    Delete Forever
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

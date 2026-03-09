@@ -23,7 +23,7 @@ def login_view(request):
 
     if request.method == 'POST':
         identifier = request.POST.get('identifier', '').strip()
-        password   = request.POST.get('password', '').strip()
+        password = request.POST.get('password', '').strip()
 
         if not identifier or not password:
             messages.error(request, 'Please enter your login ID and password.')
@@ -34,7 +34,7 @@ def login_view(request):
         # Try phone
         if identifier.isdigit():
             try:
-                u    = User.objects.get(phone=identifier)
+                u = User.objects.get(phone=identifier)
                 user = authenticate(request, username=u.phone, password=password)
             except User.DoesNotExist:
                 pass
@@ -42,7 +42,7 @@ def login_view(request):
         # Try username
         if user is None and not identifier.isdigit() and '@' not in identifier:
             try:
-                u    = User.objects.get(username=identifier)
+                u = User.objects.get(username=identifier)
                 user = authenticate(request, username=u.phone, password=password)
             except User.DoesNotExist:
                 pass
@@ -50,7 +50,7 @@ def login_view(request):
         # Try email
         if user is None and '@' in identifier:
             try:
-                u    = User.objects.get(email=identifier)
+                u = User.objects.get(email=identifier)
                 user = authenticate(request, username=u.phone, password=password)
             except User.DoesNotExist:
                 pass
@@ -59,12 +59,27 @@ def login_view(request):
             login(request, user)
             messages.success(request, f'Welcome back, {user.full_name or user.phone}!')
             return redirect_by_role(user)
+
+        # Check if account is deactivated
+        deactivated = None
+        if identifier.isdigit():
+            deactivated = User.objects.filter(phone=identifier, is_active=False).first()
+        elif '@' in identifier:
+            deactivated = User.objects.filter(email=identifier, is_active=False).first()
         else:
-            messages.error(request, 'Invalid credentials. Please try again.')
-            return render(request, 'users/login.html', {'identifier': identifier})
+            deactivated = User.objects.filter(username=identifier, is_active=False).first()
+
+        if deactivated:
+            messages.warning(request, 'Your account is deactivated. Reactivate it?')
+            return render(request, 'users/login.html', {
+                'identifier': identifier,
+                'show_reactivate': True
+            })
+
+        messages.error(request, 'Invalid credentials. Please try again.')
+        return render(request, 'users/login.html', {'identifier': identifier})
 
     return render(request, 'users/login.html')
-
 
 # ── SIGNUP ────────────────────────────────────────────────
 def signup_view(request):
@@ -493,3 +508,64 @@ def rate_user(request, user_id):
         )
         messages.success(request, f'Rated {rated.full_name} {stars}★')
     return redirect('view_profile', user_id=user_id)
+
+
+# ── DEACTIVATE ACCOUNT ────────────────────────────────────
+@login_required
+def deactivate_account(request):
+    if request.method == 'POST':
+        user = request.user
+        password = request.POST.get('password', '').strip()
+        if not user.check_password(password):
+            messages.error(request, 'Incorrect password.')
+            return redirect('edit_profile')
+        user.is_active = False
+        user.save()
+        logout(request)
+        messages.success(request, 'Account deactivated. You can reactivate anytime by logging in.')
+        return redirect('login')
+    return redirect('edit_profile')
+
+
+# ── DELETE ACCOUNT ────────────────────────────────────────
+@login_required
+def delete_account(request):
+    if request.method == 'POST':
+        user = request.user
+        password = request.POST.get('password', '').strip()
+        if not user.check_password(password):
+            messages.error(request, 'Incorrect password.')
+            return redirect('edit_profile')
+        logout(request)
+        user.delete()
+        messages.success(request, 'Account permanently deleted.')
+        return redirect('login')
+    return redirect('edit_profile')
+
+
+# ── REACTIVATE ACCOUNT ────────────────────────────────────
+def reactivate_account(request):
+    """Called from login when inactive user tries to login."""
+    if request.method == 'POST':
+        identifier = request.POST.get('identifier', '').strip()
+        password   = request.POST.get('password', '').strip()
+
+        user = None
+        if '@' in identifier:
+            user = User.objects.filter(email=identifier).first()
+        elif identifier.isdigit():
+            user = User.objects.filter(phone=identifier).first()
+        else:
+            user = User.objects.filter(username=identifier).first()
+
+        if user and not user.is_active and user.check_password(password):
+            user.is_active = True
+            user.save()
+            login(request, user)
+            messages.success(request, 'Account reactivated! Welcome back.')
+            return redirect_by_role(user)
+
+        messages.error(request, 'Invalid credentials.')
+        return render(request, 'users/reactivate.html', {'identifier': identifier})
+
+    return render(request, 'users/reactivate.html')
