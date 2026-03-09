@@ -4,12 +4,16 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-jr!7o2pxd_%-+^2qba&slp08^30vvx59k7lyxxg^zwr22+oz^(')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-me-in-production')
 
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost 127.0.0.1').split()
-ALLOWED_HOSTS += ['web-production-61033.up.railway.app', '.railway.app']
+ALLOWED_HOSTS = [
+    'web-production-61033.up.railway.app',
+    '.railway.app',
+    'localhost',
+    '127.0.0.1',
+]
 
 CSRF_TRUSTED_ORIGINS = [
     'https://web-production-61033.up.railway.app',
@@ -106,24 +110,24 @@ REST_FRAMEWORK = {
 }
 
 LOGIN_URL = '/login/'
-
 CHANNEL_LAYERS = {'default': {'BACKEND': 'channels.layers.InMemoryChannelLayer'}}
 
-# Fast2SMS — real SMS OTP
-FAST2SMS_API_KEY = os.environ.get('FAST2SMS_API_KEY', '')
-
-# Email OTP — Gmail SMTP
+# Email — credentials from Railway Variables
 EMAIL_BACKEND       = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST          = 'smtp.gmail.com'
 EMAIL_PORT          = 587
 EMAIL_USE_TLS       = True
 EMAIL_HOST_USER     = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.environ.get('EMAIL_HOST_USER', '')
+DEFAULT_FROM_EMAIL  = os.environ.get('DEFAULT_FROM_EMAIL', os.environ.get('EMAIL_HOST_USER', ''))
 
+FAST2SMS_API_KEY = os.environ.get('FAST2SMS_API_KEY', '')
+
+# Production security
 if not DEBUG:
-    SECURE_BROWSER_XSS_FILTER   = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    X_FRAME_OPTIONS              = 'DENY'
-    SESSION_COOKIE_SECURE        = True
-    CSRF_COOKIE_SECURE           = True
+    SECURE_BROWSER_XSS_FILTER      = True
+    SECURE_CONTENT_TYPE_NOSNIFF    = True
+    X_FRAME_OPTIONS                 = 'DENY'
+    SESSION_COOKIE_SECURE           = True
+    CSRF_COOKIE_SECURE              = True
+    SECURE_SSL_REDIRECT             = False  # Railway handles SSL
